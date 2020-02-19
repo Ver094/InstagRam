@@ -1,0 +1,331 @@
+library(tidyverse)
+library(lubridate)
+library(rjson)
+library(stringr)
+
+# collection of functions to import the elements from single files available from the user's profile
+# they take the file name (nome_file) and return dataframes containing reorganized content of the files
+
+#___________________________________________
+# comments: function to import comments file
+# it returns a list of two dataframes (Commenti_media and Commenti_live) containing variables "Testo" (text of the comment), "Utente" (user name to whom the comment is issued), 
+# "Data" (date), "DayTime" (time slot obtained with function DayTime)
+
+comments<-function(nome_file) { 
+  Commenti<-fromJSON(file=paste(nome_file))
+  Commenti_media<-tryCatch({data.frame(matrix(unlist(Commenti$media_comments), nrow=length(Commenti$media_comments), byrow=T))}, error=function(e){NULL})
+  if(!is.null(Commenti_media)){
+    Commenti_media<- Commenti_media %>%
+      mutate(Data=ymd_hms(X1)) %>% 
+      select(-X1)
+    dayTime<-DayTime(Commenti_media$Data)
+    Commenti_media<- Commenti_media %>%
+      mutate(DayTime=dayTime, X2=as.character(X2)) %>%
+      rename(Testo=X2, Utente=X3)
+  }
+  
+  Commenti_live<-tryCatch({data.frame(matrix(unlist(Commenti$live_comments), nrow=length(Commenti$live_comments), byrow=T))}, error=function(e){NULL})
+  if(!is.null(Commenti_live)){
+    Commenti_live<- Commenti_live %>%
+      mutate(Data=ymd_hms(X1)) %>%  
+      select(-X1)
+    dayTime<-DayTime(Commenti_live$Data)
+    Commenti_live<- Commenti_live %>%
+      mutate(DayTime=dayTime, X2=as.character(X2)) %>%
+      rename(Testo=X2, Utente=X3)
+  }
+  
+  Commenti=list(Commenti_media=Commenti_media, Commenti_live=Commenti_live)
+  return(Commenti)
+}
+
+
+#_____________________________________________
+#  media: function to import media file
+# it returns a list of three dataframes (Foto, Video, Stories) containing variables Caption, Location, File_path, Data and DayTime
+
+media<-function(nome_file){
+  Media<-fromJSON(file=paste(nome_file))
+  
+  Foto<-tryCatch(expr={Media$photos}, error=function(e){NULL})
+  if(!is.null(Foto)){
+    for (i in 1:length(Foto)) {
+      Location=tryCatch(expr={Foto[[i]]$location}, error=function(e){NULL})
+      if(is.null(Location)){
+        Location=''
+        Foto[[i]]<-append(Foto[[i]], Location, 2)
+        names(Foto[[i]])[3]<-"location"
+      }
+    }
+    Foto=data.frame(matrix(unlist(Foto), nrow=length(Foto), byrow = T))%>% #creo dataframe con info sulle foto e lo aggiungo alla lista
+      mutate(Data=ymd_hms(X2)) %>%  
+      select(-X2)
+    dayTime<-DayTime(Foto$Data)
+    Foto<- Foto %>%
+      mutate(DayTime=dayTime, X1=as.character(X1)) %>%
+      rename(Caption=X1, Location=X3, File_path=X4)  
+  }
+  
+  Video<-tryCatch(expr={Media$videos}, error=function(e){NULL})
+  if(!is.null(Video)){
+    for(i in 1:length(Video)){
+      Location=tryCatch(expr={Video[[i]]$location}, error=function(e){NULL})
+      if(is.null(Location)){
+        Location=''
+        Video[[i]]<-append(Video[[i]], Location, 2)
+        names(Video[[i]])[3]<-"location"
+      }  
+    }
+    Video=data.frame(matrix(unlist(Video), nrow=length(Video), byrow = T))%>%
+      mutate(Data=ymd_hms(X2)) %>%  #converto formato ora
+      select(-X2)
+    dayTime<-DayTime(Video$Data)
+    Video<- Video %>%
+      mutate(DayTime=dayTime, X1=as.character(X1)) %>%
+      rename(Caption=X1, Location=X3, File_path=X4) 
+  }
+  
+  Stories<-tryCatch(expr={Media$stories}, error=function(e){NULL})
+  if(!is.null(Stories)){
+    Stories=data.frame(matrix(unlist(Stories), nrow=length(Stories), byrow=T))%>%
+      mutate(Data=ymd_hms(X2)) %>%  #converto formato ora
+      select(-X2)
+    dayTime<-DayTime(Stories$Data)
+    Stories<- Stories %>%
+      mutate(DayTime=dayTime, X1=as.character(X1)) %>%
+      rename(Caption=X1, File_path=X3)
+  }
+  Media=list(Foto=Foto, Video=Video, Stories=Stories)
+  
+  return(Media)
+}  
+
+#___________________________________________________
+#  connections: function to import connections file
+# it returns a list of five dataframes (Followers, Following, Utenti_bloccati, Amici_stretti, Hashtag_seguiti) containing variables
+# Utente, Data, Daytime
+
+connections<-function(nome_file){
+  Connessioni<-fromJSON(file=paste(nome_file)) 
+  Followers=data.frame(Data=matrix(unlist(Connessioni$followers))) %>%
+    mutate(Utente=names(Connessioni$followers), Data=ymd_hms(Data))
+  dayTime=DayTime(Followers$Data)
+  Followers<-Followers%>%
+    mutate(DayTime=dayTime)%>%
+    select(Utente, Data, DayTime)
+  
+  Following=data.frame(Data=matrix(unlist(Connessioni$following))) %>%
+    mutate(Utente=names(Connessioni$following), Data=ymd_hms(Data))
+  dayTime=DayTime(Following$Data)
+  Following<-Following%>%
+    mutate(DayTime=dayTime)%>%
+    select(Utente, Data, DayTime)
+  
+  Utenti_bloccati<-tryCatch(expr={data.frame(Data=matrix(unlist(Connessioni$blocked_users)))}, error=function(e){NULL})
+  if(!is.null(Utenti_bloccati)){
+    Utenti_bloccati<-Utenti_bloccati%>%
+      mutate(Utente=names(Connessioni$blocked_users), Data=ymd_hms(Data))
+    dayTime=DayTime(Utenti_bloccati$Data)
+    Utenti_bloccati<-Utenti_bloccati%>%
+      mutate(DayTime=dayTime)%>%
+      select(Utente, Data, DayTime)}
+  
+  Amici_stretti<-tryCatch(expr={data.frame(Data=matrix(unlist(Connessioni$close_friends)))}, error=function(e){NULL})
+  if(!is.null(Amici_stretti)){
+    Amici_stretti<-Amici_stretti%>%
+      mutate(Utente=names(Connessioni$close_friends), Data=ymd_hms(Data))
+    dayTime=DayTime(Amici_stretti$Data)
+    Amici_stretti<-Amici_stretti%>%
+      mutate(DayTime=dayTime)%>%
+      select(Utente, Data, DayTime)
+  }
+  
+  Hashtag_seguiti<-tryCatch(expr={data.frame(Data=matrix(unlist(Connessioni$following_hashtags)))}, error=function(e){NULL})
+  if(!is.null(Hashtag_seguiti)){
+    Hashtag_seguiti<-Hashtag_seguiti%>%
+      mutate(Hashtag=names(Connessioni$following_hashtags), Data=ymd_hms(Data))
+    dayTime=DayTime(Hashtag_seguiti$Data)
+    Hashtag_seguiti<-Hashtag_seguiti%>%
+      mutate(DayTime=dayTime)%>%
+      select(Hashtag, Data, DayTime)
+  }
+  Connessioni=list(Followers=Followers, Following=Following, Utenti_bloccati=Utenti_bloccati, Amici_stretti=Amici_stretti, Hashtag_seguiti=Hashtag_seguiti)
+  return(Connessioni)
+}
+
+
+
+#______________________________________
+#  likes: function to import likes file
+# it returns a list of two dataframes (Likes_media, Likes_comm) containing variables Utente, Data, DayTime
+
+likes<-function(nome_file){
+  Likes=fromJSON(file=paste(nome_file)) 
+  Likes_media<-tryCatch(expr={data.frame(matrix(unlist(Likes$media_likes), nrow=length(Likes$media_likes), byrow=T))}, error=function(e){NULL})
+  if(!is.null(Likes_media)){
+    Likes_media<-Likes_media %>%
+      mutate(Data=ymd_hms(X1)) %>%
+      select(-X1)
+    dayTime<-DayTime(Likes_media$Data)
+    Likes_media<- Likes_media %>%
+      mutate(DayTime=dayTime) %>%
+      rename(Utente=X2)
+  }
+  
+  Likes_comm<-tryCatch(expr={data.frame(matrix(unlist(Likes$comment_likes), nrow=length(Likes$comment_likes), byrow=T))}, error=function(e){NULL})
+  if(!is.null(Likes_comm)){
+    Likes_comm<-Likes_comm%>%
+      mutate(Data=ymd_hms(X1)) %>%  #converto formato ora
+      select(-X1)
+    dayTime<-DayTime(Likes_comm$Data)
+    Likes_comm<- Likes_comm %>%
+      mutate(DayTime=dayTime) %>%
+      rename(Utente=X2)
+  }
+  Likes=list(Likes_media=Likes_media, Likes_comm=Likes_comm)
+  return(Likes)
+}
+
+
+
+#_______________________________________
+# stories_activities: function to import stories_activities file
+# it returns a dataframe containing variabls Utente, Data, DayTime
+
+stories_activities<-function(nome_file){
+  Stories_act<-fromJSON(file=paste(nome_file))
+  Stories_act<-tryCatch(expr={data.frame(matrix(unlist(Stories_act), ncol = 2, byrow = T))}, error=function(e){NULL})
+  if(!is.null(Stories_act)){
+    Stories_act<-Stories_act %>%
+      mutate(Data=ymd_hms(X1)) %>%
+      select(-X1)
+    dayTime<-DayTime(Stories_act$Data)
+    Stories_act<-Stories_act %>%
+      mutate(DayTime=dayTime) %>%
+      rename(Utente=X2)
+    Stories_act=Stories_act
+  }
+  return(Stories_act)
+}
+
+
+
+#______________________________________
+# saved: function to import saved file
+# it returns a dataframe containing variables Utente, Data, DayTime
+
+saved<-function(nome_file){
+  Saved<-fromJSON(file=paste(nome_file))
+  Saved_media<-tryCatch(expr={data.frame(matrix(unlist(Saved$saved_media), ncol = 2, byrow = T))}, error=function(e){NULL})
+  if(!is.null(Saved_media)){
+    Saved_media<-Saved_media %>%
+      mutate(Data=ymd_hms(X1)) %>%
+      select(-X1)
+    dayTime<-DayTime(Saved_media$Data)
+    Saved_media<-Saved_media %>%
+      mutate(DayTime=dayTime) %>%
+      rename(Utente=X2)
+  }
+  
+  S_coll<-tryCatch(expr={Saved$saved_collections}, error=function(e){NULL})
+  if(!is_empty(S_coll)){
+    Saved_coll<-NULL
+    for(i in 1:length(S_coll)){
+      Save<-tryCatch(expr={data.frame(matrix(unlist(S_coll[[i]]$media), ncol=2, byrow=T))}, error=function(e){NULL})
+      if(!is.null(Save)){
+        Save<- Save %>%
+          mutate(Data=ymd_hms(X1)) %>%
+          select(-X1)
+        dayTime<-DayTime(Save$Data)
+        Save<-Save %>%
+          mutate(DayTime=dayTime) %>%
+          rename(Utente=X2)
+        Saved_coll=rbind(Saved_coll, Save)
+      }
+      Saved=rbind(Saved_media, Saved_coll)
+    }
+  } else {
+    Saved=Saved_media
+  }
+  return(Saved)
+}
+
+
+
+# ____________________________________________
+# searches: function to import searches file
+# it returns a dataframe containing variables Ricerca (object of the research), Tipo (indicates whether the research concerns hashtag, place or user), Data, DayTime
+
+searches<-function(nome_file){
+  Ricerche<-fromJSON(file=paste(nome_file))
+  Ricerche<-tryCatch(expr={data.frame(matrix(unlist(Ricerche), nrow=length(Ricerche), byrow=T))}, error=function(e){NULL})
+  if(!is.null(Ricerche)){
+    Ricerche<- Ricerche %>%
+      mutate(Data=ymd_hms(X2), X1=as.character(X1), X3=factor(X3)) %>%
+      select(-X2)
+    dayTime<-DayTime(Ricerche$Data)
+    Ricerche<-Ricerche %>%
+      mutate(DayTime=dayTime) %>%
+      rename(Ricerca=X1, Tipo=X3)
+  }
+  return(Ricerche)
+}
+
+################################
+# Import_dati takes the file path as input and returns a list of users.
+# For every user it returns a list of elements obtained from the previous functions
+
+import_dati<-function(percorso){
+  
+  directories = list.dirs(path = percorso, recursive = FALSE,full.names = TRUE) #ottengo percorsi cartelle users
+  n_folders = length(directories)
+  Instagram=list()
+  
+  for (i in 1:n_folders) {
+    dir_path= strsplit(x = directories, split = "/")[[i]] 
+    user=dir_path[length(dir_path)]
+    
+    file_json<-paste0(c(directories[i], "media.json"), collapse = "/")
+    Media<-tryCatch({media(file_json)}, error=function(e){NULL})
+    if(!is.null(Media)){
+      Instagram[[user]]$Media=Media
+    }
+    
+    file_json<-paste0(c(directories[i], "comments.json"), collapse = "/")
+    Commenti<-tryCatch({comments(file_json)}, error=function(e){NULL})
+    if(!is.null(Commenti)){
+      Instagram[[user]]$Commenti=Commenti
+    }
+    
+    file_json<-paste0(c(directories[i], "connections.json"), collapse = "/")
+    Connessioni<-tryCatch({connections(file_json)}, error=function(e){NULL})
+    if(!is.null(Connessioni)){
+      Instagram[[user]]$Connessioni=Connessioni
+    }
+    
+    file_json<-paste0(c(directories[i], "likes.json"), collapse = "/")
+    Like<-tryCatch({likes(file_json)}, error=function(e){NULL})
+    if(!is.null(Like)){
+      Instagram[[user]]$Like=Like
+    }
+    
+    file_json<-paste0(c(directories[i], "stories_activities.json"), collapse = "/")
+    Stories_act<-tryCatch({stories_activities(file_json)}, error=function(e){NULL})
+    if(!is.null(Stories_act)){
+      Instagram[[user]]$Stories_act=Stories_act
+    }
+    
+    file_json<-paste0(c(directories[i], "saved.json"), collapse = "/")
+    Saved<-tryCatch({saved(file_json)}, error=function(e){NULL})
+    if(!is.null(Saved)){
+      Instagram[[user]]$Saved=Saved
+    }
+    
+    file_json<-paste0(c(directories[i], "searches.json"), collapse = "/")
+    Ricerche<-tryCatch({searches(file_json)}, error=function(e){NULL})
+    if(!is.null(Ricerche)){
+      Instagram[[user]]$Ricerche=Ricerche
+    }
+  }
+  return(Instagram)
+}
