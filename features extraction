@@ -1,0 +1,414 @@
+# set of functions for extracting features from every single Instagram activity 
+# it takes dati (output of function Import_dati) as input and returns a dataframe containing features 
+
+# Photo______________________________________
+
+summary_foto<-function(dati){
+  Summ_Foto<-NULL
+  users<-names(dati)
+  for(i in 1:length(users)){
+    user<-users[i]
+    if(!is.null(dati[[user]]$Media$Foto)){
+      Foto<-dati[[user]]$Media$Foto 
+      if(nrow(Foto)==0) {Foto<-NULL}
+    } else {Foto<-NULL}
+    num_Caption_F=ifelse(is.null(Foto$Caption), 0,length(Foto$Caption[str_detect(Foto$Caption, "")]))
+    sum_foto<-data.frame(Utente=user,
+                         num_Foto=ifelse(is.null(Foto), 0, nrow(Foto)),
+                         num_Caption_F=num_Caption_F,
+                         Captions_F=ifelse(is.null(Foto$Caption), '' ,paste0(Foto$Caption[str_detect(Foto$Caption, "")], collapse = "_|_")),
+                         media_parole_F=ifelse(num_Caption_F==0, 0, sum(str_count(Foto$Caption, "\\w+"))/num_Caption_F),
+                         media_hashtag_F=ifelse(num_Caption_F==0, 0, sum(str_count(Foto$Caption, "#"))/num_Caption_F),
+                         Matt_F=ifelse(is.null(Foto), 0, sum(Foto$DayTime=="mattina")),
+                         Pom_F=ifelse(is.null(Foto), 0, sum(Foto$DayTime=="pomeriggio")),
+                         Sera_F=ifelse(is.null(Foto), 0, sum(Foto$DayTime=="sera")),
+                         Notte_F=ifelse(is.null(Foto), 0, sum(Foto$DayTime=="notte")),
+                         Orario_freq_F=ifelse(is.null(Foto), "no", Orario_freq(Foto$DayTime)),
+                         Lun_F=ifelse(is.null(Foto), 0, sum(wday(Foto$Data, label = T)=="lun")),
+                         Mart_F=ifelse(is.null(Foto), 0,sum(wday(Foto$Data, label = T)=="mar")),
+                         Mer_F=ifelse(is.null(Foto), 0, sum(wday(Foto$Data, label = T)=="mer")),
+                         Gio_F=ifelse(is.null(Foto), 0, sum(wday(Foto$Data, label = T)=="gio")),
+                         Ven_F=ifelse(is.null(Foto), 0, sum(wday(Foto$Data, label = T)=="ven")),
+                         Sab_F=ifelse(is.null(Foto), 0, sum(wday(Foto$Data, label = T)=="sab")),
+                         Dom_F=ifelse(is.null(Foto), 0, sum(wday(Foto$Data, label = T)=="dom")),
+                         Giorno_freq_F=ifelse(is.null(Foto), "no", Giorno_freq(Foto$Data)),
+                         Gen_F=ifelse(is.null(Foto), 0, sum(month(Foto$Data)==1)),
+                         Feb_F=ifelse(is.null(Foto), 0, sum(month(Foto$Data)==2)),
+                         Mar_F=ifelse(is.null(Foto),0, sum(month(Foto$Data)==3)),
+                         Apr_F=ifelse(is.null(Foto), 0, sum(month(Foto$Data)==4)),
+                         Mag_F=ifelse(is.null(Foto), 0, sum(month(Foto$Data)==5)),
+                         Giu_F=ifelse(is.null(Foto), 0, sum(month(Foto$Data)==6)),
+                         Lug_F=ifelse(is.null(Foto), 0, sum(month(Foto$Data)==7)),
+                         Ago_F=ifelse(is.null(Foto), 0, sum(month(Foto$Data)==8)),
+                         Set_F=ifelse(is.null(Foto), 0, sum(month(Foto$Data)==9)),
+                         Ott_F=ifelse(is.null(Foto), 0, sum(month(Foto$Data)==10)),
+                         Nov_F=ifelse(is.null(Foto), 0, sum(month(Foto$Data)==11)),
+                         Dic_F=ifelse(is.null(Foto), 0, sum(month(Foto$Data)==12)),
+                         Mese_freq_F=ifelse(is.null(Foto), "no", Mese_freq(Foto$Data))
+    )
+    Summ_Foto<-rbind(Summ_Foto, sum_foto)
+  }
+  return(Summ_Foto)
+}
+
+# Video__________________________________________________________________________
+
+summary_video<-function(dati){
+  Summ_Video<-NULL
+  users<-names(dati)
+  for(i in 1:length(users)){
+    user<-users[i]
+    if(!is.null(dati[[user]]$Media$Video)){
+      Video<-dati[[user]]$Media$Video
+      if(nrow(Video)==0) {Video<-NULL}
+    } else {Video<-NULL}
+    num_Caption_V=ifelse(is.null(Video$Caption), 0,length(Video$Caption[str_detect(Video$Caption, "")]))
+    sum_video<-data.frame(Utente=user,
+                          num_Video=ifelse(is.null(Video), 0,nrow(Video)),
+                          num_Caption_V=num_Caption_V,
+                          Captions_V=ifelse(is.null(Video$Caption), '' ,paste0(Video$Caption[str_detect(Video$Caption, "")], collapse = "_|_")),
+                          media_parole_V=ifelse(num_Caption_V==0, 0, sum(str_count(Video$Caption, "\\w+"))/num_Caption_V),
+                          media_hashtag_V=ifelse(num_Caption_V==0, 0, sum(str_count(Video$Caption, "#"))/num_Caption_V),
+                          Matt_V=ifelse(is.null(Video), 0, sum(Video$DayTime=="mattina")),
+                          Pom_V=ifelse(is.null(Video), 0, sum(Video$DayTime=="pomeriggio")),
+                          Sera_V=ifelse(is.null(Video), 0, sum(Video$DayTime=="sera")),
+                          Notte_V=ifelse(is.null(Video), 0, sum(Video$DayTime=="notte")),
+                          Orario_freq_V=ifelse(is.null(Video), "no", Orario_freq(Video$DayTime)),
+                          Lun_V=ifelse(is.null(Video), 0, sum(wday(Video$Data, label = T)=="lun")),
+                          Mart_V=ifelse(is.null(Video), 0,sum(wday(Video$Data, label = T)=="mar")),
+                          Mer_V=ifelse(is.null(Video), 0, sum(wday(Video$Data, label = T)=="mer")),
+                          Gio_V=ifelse(is.null(Video), 0, sum(wday(Video$Data, label = T)=="gio")),
+                          Ven_V=ifelse(is.null(Video), 0, sum(wday(Video$Data, label = T)=="ven")),
+                          Sab_V=ifelse(is.null(Video), 0, sum(wday(Video$Data, label = T)=="sab")),
+                          Dom_V=ifelse(is.null(Video), 0, sum(wday(Video$Data, label = T)=="dom")),
+                          Giorno_freq_V=ifelse(is.null(Video), "no", Giorno_freq(Video$Data)),
+                          Gen_V=ifelse(is.null(Video), 0, sum(month(Video$Data)==1)),
+                          Feb_V=ifelse(is.null(Video), 0, sum(month(Video$Data)==2)),
+                          Mar_V=ifelse(is.null(Video), 0, sum(month(Video$Data)==3)),
+                          Apr_V=ifelse(is.null(Video), 0, sum(month(Video$Data)==4)),
+                          Mag_V=ifelse(is.null(Video), 0, sum(month(Video$Data)==5)),
+                          Giu_V=ifelse(is.null(Video), 0, sum(month(Video$Data)==6)),
+                          Lug_V=ifelse(is.null(Video), 0, sum(month(Video$Data)==7)),
+                          Ago_V=ifelse(is.null(Video), 0, sum(month(Video$Data)==8)),
+                          Set_V=ifelse(is.null(Video), 0, sum(month(Video$Data)==9)),
+                          Ott_V=ifelse(is.null(Video), 0, sum(month(Video$Data)==10)),
+                          Nov_V=ifelse(is.null(Video), 0, sum(month(Video$Data)==11)),
+                          Dic_V=ifelse(is.null(Video), 0, sum(month(Video$Data)==12)),
+                          Mese_freq_V=ifelse(is.null(Video), "no", Mese_freq(Video$Data))
+    )
+    Summ_Video<-rbind(Summ_Video, sum_video)
+  }
+  return(Summ_Video)
+}
+
+# Storie_________________________________________________________________________
+
+summary_stories<-function(dati){
+  Summ_Stories<-NULL
+  users<-names(dati)
+  for(i in 1:length(users)){
+    user<-users[i]
+    if(!is.null(dati[[user]]$Media$Stories)){
+      Stories<-dati[[user]]$Media$Stories
+      if(nrow(Stories)==0) {Stories<-NULL}
+    } else {Stories<-NULL}
+    num_Caption_S=ifelse(is.null(Stories$Caption), 0,length(Stories$Caption[str_detect(Stories$Caption, "")]))
+    sum_sto<-data.frame(Utente=user,
+                        num_Stories=ifelse(is.null(Stories), 0,nrow(Stories)),
+                        num_Caption_S=num_Caption_S,
+                        Captions_S=ifelse(is.null(Stories$Caption), '' ,paste0(Stories$Caption[str_detect(Stories$Caption, "")], collapse = "_|_")),
+                        media_parole_S=ifelse(num_Caption_S==0, 0, sum(str_count(Stories$Caption, "\\w+"))/num_Caption_S),
+                        media_hashtag_S=ifelse(num_Caption_S==0, 0, sum(str_count(Stories$Caption, "#"))/num_Caption_S),
+                        Matt_S=ifelse(is.null(Stories), 0, sum(Stories$DayTime=="mattina")),
+                        Pom_S=ifelse(is.null(Stories), 0, sum(Stories$DayTime=="pomeriggio")),
+                        Sera_S=ifelse(is.null(Stories), 0, sum(Stories$DayTime=="sera")),
+                        Notte_S=ifelse(is.null(Stories), 0, sum(Stories$DayTime=="notte")),
+                        Orario_freq_S=ifelse(is.null(Stories), "no", Orario_freq(Stories$DayTime)),
+                        Lun_S=ifelse(is.null(Stories), 0, sum(wday(Stories$Data, label = T)=="lun")),
+                        Mart_S=ifelse(is.null(Stories), 0,sum(wday(Stories$Data, label = T)=="mar")),
+                        Mer_S=ifelse(is.null(Stories), 0, sum(wday(Stories$Data, label = T)=="mer")),
+                        Gio_S=ifelse(is.null(Stories), 0, sum(wday(Stories$Data, label = T)=="gio")),
+                        Ven_S=ifelse(is.null(Stories), 0, sum(wday(Stories$Data, label = T)=="ven")),
+                        Sab_S=ifelse(is.null(Stories), 0, sum(wday(Stories$Data, label = T)=="sab")),
+                        Dom_S=ifelse(is.null(Stories), 0, sum(wday(Stories$Data, label = T)=="dom")),
+                        Giorno_freq_S=ifelse(is.null(Stories), "no", Giorno_freq(Stories$Data)),
+                        Gen_S=ifelse(is.null(Stories), 0, sum(month(Stories$Data)==1)),
+                        Feb_S=ifelse(is.null(Stories), 0, sum(month(Stories$Data)==2)),
+                        Mar_S=ifelse(is.null(Stories), 0, sum(month(Stories$Data)==3)),
+                        Apr_S=ifelse(is.null(Stories), 0, sum(month(Stories$Data)==4)),
+                        Mag_S=ifelse(is.null(Stories), 0, sum(month(Stories$Data)==5)),
+                        Giu_S=ifelse(is.null(Stories), 0, sum(month(Stories$Data)==6)),
+                        Lug_S=ifelse(is.null(Stories), 0, sum(month(Stories$Data)==7)),
+                        Ago_S=ifelse(is.null(Stories), 0, sum(month(Stories$Data)==8)),
+                        Set_S=ifelse(is.null(Stories), 0, sum(month(Stories$Data)==9)),
+                        Ott_S=ifelse(is.null(Stories), 0, sum(month(Stories$Data)==10)),
+                        Nov_S=ifelse(is.null(Stories), 0, sum(month(Stories$Data)==11)),
+                        Dic_S=ifelse(is.null(Stories), 0, sum(month(Stories$Data)==12)),
+                        Mese_freq_S=ifelse(is.null(Stories), "no", Mese_freq(Stories$Data))
+    )
+    Summ_Stories<-rbind(Summ_Stories, sum_sto)
+  }
+  return(Summ_Stories)
+}
+
+# Connections_____________________________________________________________________
+
+summary_connessioni<-function(dati){
+  Summ_Conn<-NULL
+  users<-names(dati)
+  for(i in 1:length(users)){
+    user<-users[i]
+    sum_con<-data.frame(Utente=user,
+                        Followers=nrow(dati[[user]]$Connessioni$Followers),
+                        Following=nrow(dati[[user]]$Connessioni$Following),
+                        Bloccati=ifelse(is.null(dati[[user]]$Connessioni$Utenti_bloccati), 0, nrow(dati[[user]]$Connessioni$Utenti_bloccati)),
+                        Amici_stretti=ifelse(is.null(dati[[user]]$Connessioni$Amici_stretti), 0, nrow(dati[[user]]$Connessioni$Amici_stretti)),
+                        num_Hashtag_seg=ifelse(is.null(dati[[user]]$Connessioni$Hashtag_seguiti), 0, nrow(dati[[user]]$Connessioni$Hashtag_seguiti)),
+                        Hashtag_seguiti=paste0(dati[[user]]$Connessioni$Hashtag_seguiti$Hashtag, collapse = "_|_"))
+    Summ_Conn<-rbind(Summ_Conn, sum_con)
+  }
+  return(Summ_Conn)
+}
+
+#Comments_________________________________________________________________________
+
+summary_commenti<-function(dati){
+  Summ_Comm<-NULL
+  users<-names(dati)
+  for(i in 1:length(users)){
+    user<-users[i]
+    if(!is.null(dati[[user]]$Commenti$Commenti_media)){
+      Commenti<-dati[[user]]$Commenti$Commenti_media
+      if(nrow(Commenti)==0) {Commenti<-NULL}
+    } else {Commenti<-NULL}
+    num_Commenti=ifelse(is.null(Commenti), 0,nrow(Commenti))
+    sum_com<-data.frame(Utente=user,
+                        num_Commenti=num_Commenti,
+                        Commenti=ifelse(is.null(dati[[user]]$Commenti), '' ,paste0(Commenti$Testo, collapse = "_|_")),
+                        media_parole_C=ifelse(is.null(Commenti), 0, sum(str_count(Commenti$Testo, "\\w+"))/num_Commenti),
+                        media_hashtag_C=ifelse(is.null(Commenti), 0, sum(str_count(Commenti$Testo, "#"))/num_Commenti),
+                        Matt_C=ifelse(is.null(Commenti), 0, sum(Commenti$DayTime=="mattina")),
+                        Pom_C=ifelse(is.null(Commenti), 0, sum(Commenti$DayTime=="pomeriggio")),
+                        Sera_C=ifelse(is.null(Commenti), 0, sum(Commenti$DayTime=="sera")),
+                        Notte_C=ifelse(is.null(Commenti), 0, sum(Commenti$DayTime=="notte")),
+                        Orario_freq_C=ifelse(is.null(Commenti), "no", Orario_freq(Commenti$DayTime)),
+                        Lun_C=ifelse(is.null(Commenti), 0, sum(wday(Commenti$Data, label = T)=="lun")),
+                        Mart_C=ifelse(is.null(Commenti), 0,sum(wday(Commenti$Data, label = T)=="mar")),
+                        Mer_C=ifelse(is.null(Commenti), 0, sum(wday(Commenti$Data, label = T)=="mer")),
+                        Gio_C=ifelse(is.null(Commenti), 0, sum(wday(Commenti$Data, label = T)=="gio")),
+                        Ven_C=ifelse(is.null(Commenti), 0, sum(wday(Commenti$Data, label = T)=="ven")),
+                        Sab_C=ifelse(is.null(Commenti), 0, sum(wday(Commenti$Data, label = T)=="sab")),
+                        Dom_C=ifelse(is.null(Commenti), 0, sum(wday(Commenti$Data, label = T)=="dom")),
+                        Giorno_freq_C=ifelse(is.null(Commenti), "no", Giorno_freq(Commenti$Data)),
+                        Gen_C=ifelse(is.null(Commenti), 0, sum(month(Commenti$Data)==1)),
+                        Feb_C=ifelse(is.null(Commenti), 0, sum(month(Commenti$Data)==2)),
+                        Mar_C=ifelse(is.null(Commenti), 0, sum(month(Commenti$Data)==3)),
+                        Apr_C=ifelse(is.null(Commenti), 0, sum(month(Commenti$Data)==4)),
+                        Mag_C=ifelse(is.null(Commenti), 0, sum(month(Commenti$Data)==5)),
+                        Giu_C=ifelse(is.null(Commenti), 0, sum(month(Commenti$Data)==6)),
+                        Lug_C=ifelse(is.null(Commenti), 0, sum(month(Commenti$Data)==7)),
+                        Ago_C=ifelse(is.null(Commenti), 0, sum(month(Commenti$Data)==8)),
+                        Set_C=ifelse(is.null(Commenti), 0, sum(month(Commenti$Data)==9)),
+                        Ott_C=ifelse(is.null(Commenti), 0, sum(month(Commenti$Data)==10)),
+                        Nov_C=ifelse(is.null(Commenti), 0, sum(month(Commenti$Data)==11)),
+                        Dic_C=ifelse(is.null(Commenti), 0, sum(month(Commenti$Data)==12)),
+                        Mese_freq_C=ifelse(is.null(Commenti), "no", Mese_freq(Commenti$Data)))
+    Summ_Comm<-rbind(Summ_Comm, sum_com)
+  }
+  return(Summ_Comm)
+}
+
+#Likes____________________________________________________________________________
+
+summary_like<-function(dati){
+  Summ_Like<-NULL
+  users<-names(dati)
+  for(i in 1:length(users)){
+    user<-users[i]
+    if(!is.null(dati[[user]]$Like$Likes_media)){
+      Like<-dati[[user]]$Like$Likes_media 
+      if(nrow(Like)==0) {Like<-NULL}
+    } else {Like<-NULL}
+    sum_l<-data.frame(Utente=user,
+                      num_Like=ifelse(is.null(Like), 0,nrow(Like)),
+                      Matt_L=ifelse(is.null(Like), 0, sum(Like$DayTime=="mattina")),
+                      Pom_L=ifelse(is.null(Like), 0, sum(Like$DayTime=="pomeriggio")),
+                      Sera_L=ifelse(is.null(Like), 0, sum(Like$DayTime=="sera")),
+                      Notte_L=ifelse(is.null(Like), 0, sum(Like$DayTime=="notte")),
+                      Orario_freq_L=ifelse(is.null(Like), "no", Orario_freq(Like$DayTime)),
+                      Lun_L=ifelse(is.null(Like), 0, sum(wday(Like$Data, label = T)=="lun")),
+                      Mart_L=ifelse(is.null(Like), 0,sum(wday(Like$Data, label = T)=="mar")),
+                      Mer_L=ifelse(is.null(Like), 0, sum(wday(Like$Data, label = T)=="mer")),
+                      Gio_L=ifelse(is.null(Like), 0, sum(wday(Like$Data, label = T)=="gio")),
+                      Ven_L=ifelse(is.null(Like), 0, sum(wday(Like$Data, label = T)=="ven")),
+                      Sab_L=ifelse(is.null(Like), 0, sum(wday(Like$Data, label = T)=="sab")),
+                      Dom_L=ifelse(is.null(Like), 0, sum(wday(Like$Data, label = T)=="dom")),
+                      Giorno_freq_L=ifelse(is.null(Like), "no", Giorno_freq(Like$Data)),
+                      Gen_L=ifelse(is.null(Like), 0, sum(month(Like$Data)==1)),
+                      Feb_L=ifelse(is.null(Like), 0, sum(month(Like$Data)==2)),
+                      Mar_L=ifelse(is.null(Like), 0, sum(month(Like$Data)==3)),
+                      Apr_L=ifelse(is.null(Like), 0, sum(month(Like$Data)==4)),
+                      Mag_L=ifelse(is.null(Like), 0, sum(month(Like$Data)==5)),
+                      Giu_L=ifelse(is.null(Like), 0, sum(month(Like$Data)==6)),
+                      Lug_L=ifelse(is.null(Like), 0, sum(month(Like$Data)==7)),
+                      Ago_L=ifelse(is.null(Like), 0, sum(month(Like$Data)==8)),
+                      Set_L=ifelse(is.null(Like), 0, sum(month(Like$Data)==9)),
+                      Ott_L=ifelse(is.null(Like), 0, sum(month(Like$Data)==10)),
+                      Nov_L=ifelse(is.null(Like), 0, sum(month(Like$Data)==11)),
+                      Dic_L=ifelse(is.null(Like), 0, sum(month(Like$Data)==12)),
+                      Mese_freq_L=ifelse(is.null(Like), "no", Mese_freq(Like$Data)))
+    Summ_Like<-rbind(Summ_Like, sum_l)
+  }
+  return(Summ_Like)
+}
+
+# Stories activities________________________________________________________________
+
+summary_storiesAct<-function(dati){
+  Summ_StoriesAct<-NULL
+  users<-names(dati)
+  for(i in 1:length(users)){
+    user<-users[i]
+    if(!is.null(dati[[user]]$Stories_act)){
+      StoriesAct<-dati[[user]]$Stories_act 
+      if(nrow(StoriesAct)==0) {StoriesAct<-NULL}
+    } else {StoriesAct<-NULL}
+    sum_stoAct<-data.frame(Utente=user,
+                           num_StoriesAct=ifelse(is.null(StoriesAct), 0,nrow(StoriesAct)),
+                           Matt_SAct=ifelse(is.null(StoriesAct), 0, sum(StoriesAct$DayTime=="mattina")),
+                           Pom_SAct=ifelse(is.null(StoriesAct), 0, sum(StoriesAct$DayTime=="pomeriggio")),
+                           Sera_SAct=ifelse(is.null(StoriesAct), 0, sum(StoriesAct$DayTime=="sera")),
+                           Notte_SAct=ifelse(is.null(StoriesAct), 0, sum(StoriesAct$DayTime=="notte")),
+                           Orario_freq_SAct=ifelse(is.null(StoriesAct), "no", Orario_freq(StoriesAct$DayTime)),
+                           Lun_SAct=ifelse(is.null(StoriesAct), 0, sum(wday(StoriesAct$Data, label = T)=="lun")),
+                           Mart_SAct=ifelse(is.null(StoriesAct), 0,sum(wday(StoriesAct$Data, label = T)=="mar")),
+                           Mer_SAct=ifelse(is.null(StoriesAct), 0, sum(wday(StoriesAct$Data, label = T)=="mer")),
+                           Gio_SAct=ifelse(is.null(StoriesAct), 0, sum(wday(StoriesAct$Data, label = T)=="gio")),
+                           Ven_SAct=ifelse(is.null(StoriesAct), 0, sum(wday(StoriesAct$Data, label = T)=="ven")),
+                           Sab_SAct=ifelse(is.null(StoriesAct), 0, sum(wday(StoriesAct$Data, label = T)=="sab")),
+                           Dom_SAct=ifelse(is.null(StoriesAct), 0, sum(wday(StoriesAct$Data, label = T)=="dom")),
+                           Giorno_freq_SAct=ifelse(is.null(StoriesAct), "no", Giorno_freq(StoriesAct$Data)),
+                           Gen_SAct=ifelse(is.null(StoriesAct), 0, sum(month(StoriesAct$Data)==1)),
+                           Feb_SAct=ifelse(is.null(StoriesAct), 0, sum(month(StoriesAct$Data)==2)),
+                           Mar_SAct=ifelse(is.null(StoriesAct), 0, sum(month(StoriesAct$Data)==3)),
+                           Apr_SAct=ifelse(is.null(StoriesAct), 0, sum(month(StoriesAct$Data)==4)),
+                           Mag_SAct=ifelse(is.null(StoriesAct), 0, sum(month(StoriesAct$Data)==5)),
+                           Giu_SAct=ifelse(is.null(StoriesAct), 0, sum(month(StoriesAct$Data)==6)),
+                           Lug_SAct=ifelse(is.null(StoriesAct), 0, sum(month(StoriesAct$Data)==7)),
+                           Ago_SAct=ifelse(is.null(StoriesAct), 0, sum(month(StoriesAct$Data)==8)),
+                           Set_SAct=ifelse(is.null(StoriesAct), 0, sum(month(StoriesAct$Data)==9)),
+                           Ott_SAct=ifelse(is.null(StoriesAct), 0, sum(month(StoriesAct$Data)==10)),
+                           Nov_SAct=ifelse(is.null(StoriesAct), 0, sum(month(StoriesAct$Data)==11)),
+                           Dic_SAct=ifelse(is.null(StoriesAct), 0, sum(month(StoriesAct$Data)==12)),
+                           Mese_freq_SAct=ifelse(is.null(StoriesAct), "no", Mese_freq(StoriesAct$Data))
+    )
+    Summ_StoriesAct<-rbind(Summ_StoriesAct, sum_stoAct)
+  }
+  return(Summ_StoriesAct)
+}
+
+# Searches___________________________________________________________________________
+
+summary_ricerche<-function(dati){
+  Summ_Ric<-NULL
+  users<-names(dati)
+  for(i in 1:length(users)){
+    user<-users[i]
+    if(!is.null(dati[[user]]$Ricerche)){
+      Ricerche<-dati[[user]]$Ricerche 
+      if(nrow(Ricerche)==0) {Ricerche<-NULL}
+    } else {Ricerche<-NULL}
+    sum_ric<-data.frame(Utente=user,
+                        num_Ricerche=ifelse(is.null(Ricerche), 0, nrow(Ricerche)),
+                        Matt_R=ifelse(is.null(Ricerche), 0, sum(Ricerche$DayTime=="mattina")),
+                        Pom_R=ifelse(is.null(Ricerche), 0, sum(Ricerche$DayTime=="pomeriggio")),
+                        Sera_R=ifelse(is.null(Ricerche), 0, sum(Ricerche$DayTime=="sera")),
+                        Notte_R=ifelse(is.null(Ricerche), 0, sum(Ricerche$DayTime=="notte")),
+                        Orario_freq_R=ifelse(is.null(Ricerche), "no", Orario_freq(Ricerche$DayTime)),
+                        Lun_R=ifelse(is.null(Ricerche), 0, sum(wday(Ricerche$Data, label = T)=="lun")),
+                        Mart_R=ifelse(is.null(Ricerche), 0,sum(wday(Ricerche$Data, label = T)=="mar")),
+                        Mer_R=ifelse(is.null(Ricerche), 0, sum(wday(Ricerche$Data, label = T)=="mer")),
+                        Gio_R=ifelse(is.null(Ricerche), 0, sum(wday(Ricerche$Data, label = T)=="gio")),
+                        Ven_R=ifelse(is.null(Ricerche), 0, sum(wday(Ricerche$Data, label = T)=="ven")),
+                        Sab_R=ifelse(is.null(Ricerche), 0, sum(wday(Ricerche$Data, label = T)=="sab")),
+                        Dom_R=ifelse(is.null(Ricerche), 0, sum(wday(Ricerche$Data, label = T)=="dom")),
+                        Giorno_freq_R=ifelse(is.null(Ricerche), "no", Giorno_freq(Ricerche$Data)),
+                        Gen_R=ifelse(is.null(Ricerche), 0, sum(month(Ricerche$Data)==1)),
+                        Feb_R=ifelse(is.null(Ricerche), 0, sum(month(Ricerche$Data)==2)),
+                        Mar_R=ifelse(is.null(Ricerche), 0, sum(month(Ricerche$Data)==3)),
+                        Apr_R=ifelse(is.null(Ricerche), 0, sum(month(Ricerche$Data)==4)),
+                        Mag_R=ifelse(is.null(Ricerche), 0, sum(month(Ricerche$Data)==5)),
+                        Giu_R=ifelse(is.null(Ricerche), 0, sum(month(Ricerche$Data)==6)),
+                        Lug_R=ifelse(is.null(Ricerche), 0, sum(month(Ricerche$Data)==7)),
+                        Ago_R=ifelse(is.null(Ricerche), 0, sum(month(Ricerche$Data)==8)),
+                        Set_R=ifelse(is.null(Ricerche), 0, sum(month(Ricerche$Data)==9)),
+                        Ott_R=ifelse(is.null(Ricerche), 0, sum(month(Ricerche$Data)==10)),
+                        Nov_R=ifelse(is.null(Ricerche), 0, sum(month(Ricerche$Data)==11)),
+                        Dic_R=ifelse(is.null(Ricerche), 0, sum(month(Ricerche$Data)==12)),
+                        Mese_freq_R=ifelse(is.null(Ricerche), "no", Mese_freq(Ricerche$Data)))
+    Summ_Ric<-rbind(Summ_Ric, sum_ric)
+  }
+  return(Summ_Ric)
+}
+
+# Saved______________________________________________________________________
+
+summary_saved<-function(dati){
+  Summ_Saved<-NULL
+  users<-names(dati)
+  for(i in 1:length(users)){
+    user<-users[i]
+    if(!is.null(dati[[user]]$Saved)){
+      Saved<-dati[[user]]$Saved 
+      if(nrow(Saved)==0) {Saved<-NULL}
+    } else {Saved<-NULL}
+    sum_sav<-data.frame(Utente=user,
+                        num_Saved=ifelse(is.null(Saved), 0, nrow(Saved)),
+                        Matt_Sa=ifelse(is.null(Saved), 0, sum(Saved$DayTime=="mattina")),
+                        Pom_Sa=ifelse(is.null(Saved), 0, sum(Saved$DayTime=="pomeriggio")),
+                        Sera_Sa=ifelse(is.null(Saved), 0, sum(Saved$DayTime=="sera")),
+                        Notte_Sa=ifelse(is.null(Saved), 0, sum(Saved$DayTime=="notte")),
+                        Orario_freq_Sa=ifelse(is.null(Saved), "no", Orario_freq(Saved$DayTime)),
+                        Lun_Sa=ifelse(is.null(Saved), 0, sum(wday(Saved$Data, label = T)=="lun")),
+                        Mart_Sa=ifelse(is.null(Saved), 0,sum(wday(Saved$Data, label = T)=="mar")),
+                        Mer_Sa=ifelse(is.null(Saved), 0, sum(wday(Saved$Data, label = T)=="mer")),
+                        Gio_Sa=ifelse(is.null(Saved), 0, sum(wday(Saved$Data, label = T)=="gio")),
+                        Ven_Sa=ifelse(is.null(Saved), 0, sum(wday(Saved$Data, label = T)=="ven")),
+                        Sab_Sa=ifelse(is.null(Saved), 0, sum(wday(Saved$Data, label = T)=="sab")),
+                        Dom_Sa=ifelse(is.null(Saved), 0, sum(wday(Saved$Data, label = T)=="dom")),
+                        Giorno_freq_Sa=ifelse(is.null(Saved), "no", Giorno_freq(Saved$Data)),
+                        Gen_Sa=ifelse(is.null(Saved), 0, sum(month(Saved$Data)==1)),
+                        Feb_Sa=ifelse(is.null(Saved), 0, sum(month(Saved$Data)==2)),
+                        Mar_Sa=ifelse(is.null(Saved), 0, sum(month(Saved$Data)==3)),
+                        Apr_Sa=ifelse(is.null(Saved), 0, sum(month(Saved$Data)==4)),
+                        Mag_Sa=ifelse(is.null(Saved), 0, sum(month(Saved$Data)==5)),
+                        Giu_Sa=ifelse(is.null(Saved), 0, sum(month(Saved$Data)==6)),
+                        Lug_Sa=ifelse(is.null(Saved), 0, sum(month(Saved$Data)==7)),
+                        Ago_Sa=ifelse(is.null(Saved), 0, sum(month(Saved$Data)==8)),
+                        Set_Sa=ifelse(is.null(Saved), 0, sum(month(Saved$Data)==9)),
+                        Ott_Sa=ifelse(is.null(Saved), 0, sum(month(Saved$Data)==10)),
+                        Nov_Sa=ifelse(is.null(Saved), 0, sum(month(Saved$Data)==11)),
+                        Dic_Sa=ifelse(is.null(Saved), 0, sum(month(Saved$Data)==12)),
+                        Mese_freq_Sa=ifelse(is.null(Saved), "no", Mese_freq(Saved$Data)))
+    Summ_Saved<-rbind(Summ_Saved, sum_sav)
+  }
+  return(Summ_Saved)
+}
+
+#################################
+# get_features returns the whole set of features extracted with the previous functions
+
+
+get_features<-function(dati){
+    Connessioni<-summary_connessioni(dati)
+    Foto<-summary_foto(dati)
+    Video<-summary_video(dati)
+    Stories<-summary_stories(dati)
+    Commenti<-summary_commenti(dati)
+    Likes<-summary_like(dati)
+    StoriesAct<-summary_storiesAct(dati)
+    Ricerche<-summary_ricerche(dati)
+    Saved<-summary_saved(dati)
+  Features<-Reduce(inner_join, list(Connessioni, Foto, Video, Stories, Commenti, Likes, StoriesAct, Ricerche, Saved))
+  return(Features)
+}
