@@ -1,5 +1,5 @@
 # InstagRam
-A set of utilities for importing Instagram data and extracting features
+A set of utilities for importing Instagram data and extracting features in R
 
 
 ## Note
