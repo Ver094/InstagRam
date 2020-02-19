@@ -1,0 +1,79 @@
+library(lubridate)
+
+# DayTime takes a vector of dates (vettore_data) and returns a character vector 
+# presenting the time slot according to the time indicated i vettore_data
+# ("mattina" from 5 to 11, "pomeriggio from 12 to 17, "sera" from 18 to 23, "notte" from 24 to 4)
+
+DayTime<-function(vettore_data){
+  n=length(vettore_data)
+  dayTime<-vector("character", n) 
+  for (j in seq_along(vettore_data)) {
+    hour=as.numeric(hour(vettore_data[j]))
+    if (hour %in% 5:11){
+      dayTime[j]="mattina"
+    }else if (hour %in% 12:17){
+      dayTime[j]="pomeriggio"
+    }else if (hour %in% 18:23){
+      dayTime[j]="sera"
+    }else {
+      dayTime[j]="notte"}
+  }
+  return(factor(dayTime, levels = c("mattina", "pomeriggio", "sera", "notte"), ordered = T))
+}
+
+
+
+# Orario_freq takes a vector of time slots (x) and returns the one with the highest number of pubblications
+
+Orario_freq=function(x){
+  freq<-table(x)
+  orario<-names(freq)[freq==max(freq)]
+  orario<-orario[1]
+  return(orario)
+}
+
+
+
+# Giorno_freq takes a vector of dates (x) and returns the day of the week with more pubblications
+
+Giorno_freq<-function(x){
+  tab<-table(wday(x, label = T))
+  giorno=names(tab)[tab==max(tab)]
+  giorno<-giorno[1]
+  return(giorno)
+}
+
+
+
+# Mese_freq takes a vector of dates (x) and returns the month with more pubblications
+
+Mese_freq=function(x){
+  tab<-table(month(x))
+  if(names(tab)[tab==max(tab)]==1){
+    mese="gennaio"
+  }else if(names(tab)[tab==max(tab)]==2){
+    mese="febbraio"
+  }else if(names(tab)[tab==max(tab)]==3){
+    mese="marzo"
+  }else if(names(tab)[tab==max(tab)]==4){
+    mese="aprile"
+  }else if(names(tab)[tab==max(tab)]==5){
+    mese="maggio"
+  }else if(names(tab)[tab==max(tab)]==6){
+    mese="giugno"
+  }else if(names(tab)[tab==max(tab)]==7){
+    mese="luglio"
+  }else if(names(tab)[tab==max(tab)]==8){
+    mese="agosto"
+  }else if(names(tab)[tab==max(tab)]==9){
+    mese="settembre"
+  }else if(names(tab)[tab==max(tab)]==10){
+    mese="ottobre"
+  }else if(names(tab)[tab==max(tab)]==11){
+    mese="novembre"
+  }else {
+    mese="dicembre"
+  }
+  mese<-mese[1]
+  return(mese)
+}
