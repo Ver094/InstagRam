@@ -1,0 +1,198 @@
+# each of the following functions takes the output of Import_dati as input and returns a dataframe for a single activity
+
+
+# Media (photo, video, stories)____________________________________________________
+
+get_media<-function(dati){
+  users<-names(dati)
+  Media<-NULL
+  for(i in seq_along(users)){
+    user<-users[i]
+    if(!is.null(dati[[user]]$Media$Foto)){
+      m<-dati[[user]]$Media$Foto %>%
+        mutate(ID=user, Type="foto", Location=NULL, 
+               Hashtag=ifelse(str_detect(Caption, "\\#"), str_extract_all(Caption, "#\\S+"), " ")) %>%
+        mutate(Hashtag=sapply(Hashtag,paste,collapse=" ")) %>%
+        select(ID, Type, Caption, Hashtag, everything()) 
+    } else {m<-NULL}
+    if(!is.null(dati[[user]]$Media$Video)){
+      v<-dati[[user]]$Media$Video %>%
+        mutate(ID=user, Type="video", Location=NULL, 
+               Hashtag=ifelse(str_detect(Caption, "\\#"), str_extract_all(Caption, "#\\S+"), " ")) %>%
+        mutate(Hashtag=sapply(Hashtag,paste,collapse=" ")) %>%
+        select(ID, Type, Caption, Hashtag, everything())
+      m<-rbind(m, v)
+    }
+    if(!is.null(dati[[user]]$Media$Stories)){
+      s<-dati[[user]]$Media$Stories %>%
+        mutate(ID=user, Type="stories", 
+               Hashtag=ifelse(str_detect(Caption, "\\#"), str_extract_all(Caption, "#\\S+"), " ")) %>%
+        mutate(Hashtag=sapply(Hashtag,paste,collapse=" ")) %>%
+        select(ID, Type, Caption, Hashtag, everything())
+      m<-rbind(m, s)
+    }
+    if(!is.null(m)){
+      Media<-rbind(Media, m)
+    }
+  }
+  return(Media)
+}
+
+# Commetns (media e live)_______________________________________________________
+
+get_commenti<-function(dati){
+users<-names(dati)
+Commenti<-NULL
+for(i in seq_along(users)){
+  user<-users[i]
+  if(!is.null(dati[[user]]$Commenti$Commenti_media)){
+    m<-dati[[user]]$Commenti$Commenti_media %>%
+      mutate(ID=user, Type="media", 
+             Hashtag=ifelse(str_detect(Testo, "\\#"), str_extract_all(Testo, "#\\S+"), " ")) %>%
+      mutate(Hashtag=sapply(Hashtag,paste,collapse=" ")) %>%
+      select(ID, Type, Testo, Hashtag, everything())
+  } else {m<-NULL}
+  if(!is.null(dati[[user]]$Commenti$Commenti_live)){
+    l<-dati[[user]]$Commenti$Commenti_live %>%
+      mutate(ID=user, Type="live",
+             Hashtag=ifelse(str_detect(Testo, "\\#"), str_extract_all(Testo, "#\\S+"), " ") ) %>%
+      mutate(Hashtag=sapply(Hashtag,paste,collapse=" ")) %>%
+      select(ID, Type, Testo, Hashtag, everything())
+    m<-rbind(m, l)
+  }
+  if(!is.null(m)){
+    Commenti<-rbind(Commenti, m)
+  }
+}
+return(Commenti)
+}
+
+# Likes__________________________________________________________________________
+
+get_likes<-function(dati){
+users<-names(dati)
+Like<-NULL
+for(i in seq_along(users)){
+  user<-users[i]
+  if(!is.null(dati[[user]]$Like$Likes_media)){
+    m<-dati[[user]]$Like$Likes_media %>%
+      mutate(ID=user, Type="media") %>%
+      select(ID, Type, everything())
+  } else {m<-NULL}
+  if(!is.null(dati[[user]]$Like$Likes_comm)){
+    l<-dati[[user]]$Like$Likes_comm %>%
+      mutate(ID=user, Type="commenti") %>%
+      select(ID, Type, everything())
+    m<-rbind(m, l)
+  }
+  if(!is.null(m)){
+    Like<-rbind(Like, m)
+  }
+}
+return(Like)
+}
+
+# Connections___________________________________________________________________
+
+get_connessioni<-function(dati){
+users<-names(dati)
+Connessioni<-NULL
+for(i in seq_along(users)){
+  user<-users[i]
+  if(!is.null(dati[[user]]$Connessioni$Followers)){
+    f<-dati[[user]]$Connessioni$Followers %>%
+      rename(Name=Utente) %>%
+      mutate(ID=user, Type="follower") %>%
+      select(ID, Type, everything()) 
+  } else {f<-NULL}
+  if(!is.null(dati[[user]]$Connessioni$Following)){
+    fo<-dati[[user]]$Connessioni$Following %>%
+      rename(Name=Utente) %>%
+      mutate(ID=user, Type="following") %>%
+      select(ID, Type, everything())
+    f<-rbind(f, fo)
+  }
+  if(!is.null(dati[[user]]$Connessioni$Utenti_bloccati)){
+    b<-dati[[user]]$Connessioni$Utenti_bloccati %>%
+      rename(Name=Utente) %>%
+      mutate(ID=user, Type="bloccati") %>%
+      select(ID, Type, everything())
+    f<-rbind(f, b)
+  }
+  if(!is.null(dati[[user]]$Connessioni$Amici_stretti)){
+    a<-dati[[user]]$Connessioni$Amici_stretti %>%
+      rename(Name=Utente) %>%
+      mutate(ID=user, Type="amici stretti") %>%
+      select(ID, Type, everything())
+    f<-rbind(f, a)
+  }
+  if(!is.null(dati[[user]]$Connessioni$Hashtag_seguiti)){
+    h<-dati[[user]]$Connessioni$Hashtag_seguiti %>%
+      rename(Name=Hashtag) %>%
+      mutate(ID=user, Type="hashtag") %>%
+      select(ID, Type, everything())
+    f<-rbind(f, h)
+  }
+  if(!is.null(f)){
+    Connessioni<-rbind(Connessioni, f)
+  }
+}
+return(Connessioni)
+}
+
+# Stories activities______________________________________________________________
+
+get_storiesAct<-function(dati){
+  users<-names(dati)
+  Stories_Act<-NULL
+  for(i in seq_along(users)){
+    user<-users[i]
+    if(!is.null(dati[[user]]$Stories_act)){
+      m<-dati[[user]]$Stories_act %>%
+        mutate(ID=user) %>%
+        select(ID, everything())
+    } else {m<-NULL}
+    if(!is.null(m)){
+      Stories_Act<-rbind(Stories_Act, m)
+    }
+  }
+  return(Stories_Act)
+}
+
+# Searches______________________________________________________________________
+
+get_ricerche<-function(dati){
+users<-names(dati)
+Ricerche<-NULL
+for(i in seq_along(users)){
+  user<-users[i]
+  if(!is.null(dati[[user]]$Ricerche)){
+    m<-dati[[user]]$Ricerche %>%
+      mutate(ID=user) %>%
+      select(ID, everything())
+  } else {m<-NULL}
+  if(!is.null(m)){
+    Ricerche<-rbind(Ricerche, m)
+  }
+}
+return(Ricerche)
+}
+
+# Saved__________________________________________________________________
+
+get_salvataggi<-function(dati){
+  users<-names(dati)
+  Salvataggi<-NULL
+  for(i in seq_along(users)){
+    user<-users[i]
+    if(!is.null(dati[[user]]$Saved)){
+      m<-dati[[user]]$Saved %>%
+        mutate(ID=user) %>%
+        select(ID, everything())
+    } else {m<-NULL}
+    if(!is.null(m)){
+      Salvataggi<-rbind(Salvataggi, m)
+    }
+  }
+  return(Salvataggi)
+}
